@@ -145,7 +145,31 @@ def apply_browser_proxy_option(options, proxy):
         options.set_argument("--proxy-server", proxy)
 
 
-def create_browser_options(browser_proxy="", extension_path=None):
+def apply_hidden_window_option(options):
+    """把浏览器窗口移到屏幕外并抑制后台节流，使其静默运行但仍真实工作。
+
+    注册流程依赖 Cloudflare Turnstile 与真实点击，不能用无头模式，
+    这里通过把窗口定位到屏幕外并关闭后台限速来避免窗口弹到前台、抢占焦点。
+    """
+    if not hasattr(options, "set_argument"):
+        return
+    for flag in (
+        # 把窗口移到远离可视区域的坐标，等价于“看不见”但仍是真实窗口
+        "--window-position=-32000,-32000",
+        # 保持正常渲染尺寸，避免离屏窗口尺寸为 0 导致页面异常
+        "--window-size=1280,900",
+        # 离屏/最小化时禁止后台节流，保证注册页脚本与计时器正常执行
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+        "--disable-background-timer-throttling",
+    ):
+        try:
+            options.set_argument(flag)
+        except Exception:
+            pass
+
+
+def create_browser_options(browser_proxy="", extension_path=None, hide_window=None):
     options = ChromiumOptions()
     options.auto_port()
     options.set_timeouts(base=1)
@@ -153,6 +177,9 @@ def create_browser_options(browser_proxy="", extension_path=None):
     effective_extension = _extension_path if extension_path is None else str(extension_path or "")
     if effective_extension and os.path.exists(effective_extension):
         options.add_extension(effective_extension)
+    should_hide = bool(_config.get("register_hide_window", True)) if hide_window is None else bool(hide_window)
+    if should_hide:
+        apply_hidden_window_option(options)
     return options
 
 

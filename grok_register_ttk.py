@@ -754,9 +754,16 @@ class GrokRegisterGUI:
         add_field(self.count_spinbox, 0, 3, sticky=tk.W)
 
         add_label(1, 0, "注册选项:")
+        options_frame = ttk.Frame(config_frame)
         self.nsfw_var = tk.BooleanVar(value=config.get("enable_nsfw", True))
-        self.nsfw_check = tk_checkbutton(config_frame, text="注册后开启 NSFW", variable=self.nsfw_var)
-        add_field(self.nsfw_check, 1, 1, sticky=tk.W)
+        self.nsfw_check = tk_checkbutton(options_frame, text="注册后开启 NSFW", variable=self.nsfw_var)
+        self.nsfw_check.pack(side=tk.LEFT)
+        self.hide_window_var = tk.BooleanVar(value=bool(config.get("register_hide_window", True)))
+        self.hide_window_check = tk_checkbutton(
+            options_frame, text="静默隐藏浏览器窗口", variable=self.hide_window_var
+        )
+        self.hide_window_check.pack(side=tk.LEFT, padx=(12, 0))
+        add_field(options_frame, 1, 1, sticky=tk.W)
 
         add_label(1, 2, "代理（可选）:")
         self.proxy_var = tk.StringVar(value=config.get("proxy", ""))
@@ -968,6 +975,7 @@ class GrokRegisterGUI:
 
         config["email_provider"] = self.email_provider_var.get().strip() or "duckmail"
         config["enable_nsfw"] = bool(self.nsfw_var.get())
+        config["register_hide_window"] = bool(self.hide_window_var.get())
         config["proxy"] = self.proxy_var.get().strip()
         config["duckmail_api_key"] = self.api_key_var.get().strip()
         config["cloudflare_api_base"] = self.cloudflare_api_base_var.get().strip()
